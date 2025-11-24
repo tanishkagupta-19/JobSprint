@@ -1,6 +1,4 @@
-# 0-Day Job Hunter
-
-A full-stack web application that finds job listings posted on LinkedIn within the last 24 hours.
+Web application that finds job listings posted on LinkedIn within the last 24 hours.
 
 ## Setup
 
