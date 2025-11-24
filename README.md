@@ -13,7 +13,7 @@ Web application that finds job listings posted on LinkedIn within the last 24 ho
     ```
 
 3.  **Run Frontend**:
-4.  ```
+    ```
     start index.html
     ```
     Open `index.html` in your browser.
