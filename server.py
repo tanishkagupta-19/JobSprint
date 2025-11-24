@@ -24,20 +24,20 @@ def robust_get(url,params,headers):
             time.sleep(2)
     return None
 
-def scrape_linkedin_jobs(keywords:str,location:str):
+def scrape_linkedin_jobs(query:str,location:str):
     base_url="https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
     headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
-    keywords=['python','sql','aws','react','docker','java']
+    skills_to_track=['python','sql','aws','react','docker','java']
     found_skills=[]
     all_jobs=[]  
     for start in [0,25]:
         params={
-            "keywords":keywords,
+            "keywords":query,
             "location":location,
             "f_TPR":"r86400",
             "start":start
         }
-        response = robust_get(base_url, params, headers)
+        response=robust_get(base_url,params,headers)
         if not response:
             continue
         try:
@@ -48,13 +48,14 @@ def scrape_linkedin_jobs(keywords:str,location:str):
                 try:
                     title_tag=card.find("h3",class_="base-search-card__title")
                     title=title_tag.text.strip() if title_tag else "N/A"
-                    for kw in keywords:
+                    for kw in skills_to_track:
                         if kw in title.lower():
                             found_skills.append(kw)
                     company_tag=card.find("h4",class_="base-search-card__subtitle")
                     company=company_tag.text.strip() if company_tag else "N/A"
                     location_tag=card.find("span",class_="job-search-card__location")
-                    job_location=location_tag.text.strip() if location_tag else "N/A"    
+                    job_location=location_tag.text.strip() if location_tag else "N/A"
+                    print(f"DEBUG - Location found: {job_location}")
                     time_tag=card.find("time")
                     posted_date=time_tag.text.strip() if time_tag else "N/A"
                     link_tag=card.find("a",class_="base-card__full-link")
@@ -78,6 +79,25 @@ def scrape_linkedin_jobs(keywords:str,location:str):
             continue
 
     return all_jobs,dict(Counter(found_skills))
+
+def scrape_description(url):
+    headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+    response=robust_get(url,None,headers)
+    if not response:
+        return "Could not fetch description."
+    try:
+        soup=BeautifulSoup(response.text,"html.parser")
+        description=soup.find("div",class_="show-more-less-html__markup")
+        if not description:
+             description=soup.find("div",class_="description__text")
+        return description.prettify() if description else "Description not available."
+    except Exception as e:
+        return f"Error parsing description: {e}"
+
+@app.get("/description")
+def get_description(url:str=Query(...,description="Job URL")):
+    desc=scrape_description(url)
+    return {"description":desc}
 
 @app.get("/search")
 def search_jobs(title:str=Query(...,description="Job Title"),location: str=Query(..., description="Location")):
