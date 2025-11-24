@@ -9,7 +9,7 @@ Web application that finds job listings posted on LinkedIn within the last 24 ho
 
 2.  **Run Backend**:
     ```bash
-    uvicorn server:app --host 0.0.0.0 --port 5000
+    python server.py
     ```
 
 3.  **Run Frontend**:
@@ -17,6 +17,8 @@ Web application that finds job listings posted on LinkedIn within the last 24 ho
 
 ## Usage
 
-1.  Enter a Job Title and Location.
+1.  Enter a Job Title (e.g., "Python Developer") and Location.
 2.  Click "Find Fresh Jobs".
-3.  Download the results as CSV.
+3.  View the list of jobs posted in the last 24 hours.
+4.  See the "Trending Skills" analysis based on the job titles found.
+5.  Click "Quick Apply" to jump to the job posting.
