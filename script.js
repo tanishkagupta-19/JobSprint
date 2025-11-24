@@ -54,6 +54,7 @@ function renderJobs(jobs) {
                 <div>
                     <h3 class="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition-colors">${job.title}</h3>
                     <p class="text-gray-600 text-sm font-medium">${job.company} • ${job.location}</p>
+                    ${job.salary && job.salary !== "Not Listed" ? `<p class="text-green-600 text-sm font-semibold mt-1">💰 ${job.salary}</p>` : ''}
                 </div>
                 <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                     <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
@@ -101,7 +102,11 @@ async function viewDescription(url, elementId) {
         const response = await fetch(`http://localhost:5000/description?url=${encodeURIComponent(url)}`);
         const data = await response.json();
         if (data && data.description) {
-            container.innerHTML = data.description;
+            let content = data.description;
+            if (data.salary && data.salary !== "Not Listed") {
+                content = `<div class="mb-3 p-2 bg-green-50 border-l-4 border-green-500 rounded"><p class="text-green-700 font-semibold">💰 Salary: ${data.salary}</p></div>` + content;
+            }
+            container.innerHTML = content;
             container.dataset.loaded = "true";
         } else {
             container.innerHTML = '<p class="text-gray-500">Description not available.</p>';

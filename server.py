@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI,Query
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 from bs4 import BeautifulSoup
 import time
 import uvicorn
 from collections import Counter
+import re
 
 app=FastAPI()
 
@@ -23,6 +24,13 @@ def robust_get(url,params,headers):
         except requests.exceptions.RequestException:
             time.sleep(2)
     return None
+
+def extract_salary(description_text):
+    salary_pattern=r'\$[\d,]+(?:k|K)?(?:\s*-\s*\$[\d,]+(?:k|K)?)?'
+    matches=re.findall(salary_pattern,description_text)
+    if matches:
+        return max(matches,key=len)
+    return "Not Listed"
 
 def scrape_linkedin_jobs(query:str,location:str):
     base_url="https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
@@ -55,18 +63,20 @@ def scrape_linkedin_jobs(query:str,location:str):
                     company=company_tag.text.strip() if company_tag else "N/A"
                     location_tag=card.find("span",class_="job-search-card__location")
                     job_location=location_tag.text.strip() if location_tag else "N/A"
-                    print(f"DEBUG - Location found: {job_location}")
                     time_tag=card.find("time")
                     posted_date=time_tag.text.strip() if time_tag else "N/A"
                     link_tag=card.find("a",class_="base-card__full-link")
                     link=link_tag["href"] if link_tag else "#"
+                    description_snippet=card.get_text()
+                    salary=extract_salary(description_snippet)
 
                     all_jobs.append({
                         "title":title,
                         "company":company,
                         "location":job_location,
                         "posted_date":posted_date,
-                        "link":link
+                        "link":link,
+                        "salary":salary
                     })
 
                 except Exception as e:
@@ -95,12 +105,13 @@ def scrape_description(url):
         return f"Error parsing description: {e}"
 
 @app.get("/description")
-def get_description(url:str=Query(...,description="Job URL")):
+def get_job_description(url:str=Query(...,description="Job URL")):
     desc=scrape_description(url)
-    return {"description":desc}
+    salary=extract_salary(desc) if desc else "Not Listed"
+    return {"description":desc,"salary":salary}
 
 @app.get("/search")
-def search_jobs(title:str=Query(...,description="Job Title"),location: str=Query(..., description="Location")):
+def search_jobs(title:str=Query(...,description="Job Title"),location:str=Query(...,description="Location")):
     jobs,skills_count=scrape_linkedin_jobs(title,location)
     return {"jobs":jobs,"skills_count":skills_count}
     
